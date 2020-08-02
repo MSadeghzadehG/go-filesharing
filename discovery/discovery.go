@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"bufio"
 	"time"
+	"bytes"
 )
 
 func discoveryServer(port int, ip string, nodes map[string]int) {
-	p := make([]byte, 2048)
+	p := make([]byte, 1024)
 	protocol := "udp"
 	addr := net.UDPAddr{
         Port: port,
@@ -21,9 +22,11 @@ func discoveryServer(port int, ip string, nodes map[string]int) {
 	}
 	for {
         _, remoteaddr, err := udpConn.ReadFromUDP(p)
-		fmt.Printf("Read a message from %v %s \n", remoteaddr, p)
-		if _, ok:= nodes[ip]; !ok {
-			nodes[ip] = 0
+		node_ip := string(bytes.Trim(p, "\x00")) // to remove null char at the end of bytes
+		// fmt.Printf("Read a message from %v %s \n", remoteaddr, p)
+		if _, ok:= nodes[node_ip]; !ok && ip != node_ip {
+			nodes[node_ip] = 1
+			fmt.Printf("Nodes updated: %v\n", nodes)
 		}
 		if err !=  nil {
             fmt.Printf("Some error  %v", err)
@@ -37,8 +40,9 @@ func discoveryServer(port int, ip string, nodes map[string]int) {
 }
 
 func discoveryClient(port int, ip string, nodes map[string]int) {
-	p :=  make([]byte, 2048)
-    conn, err := net.Dial("udp", fmt.Sprintf("127.0.0.1:%d", port))
+	p :=  make([]byte, 1024)
+	
+	conn, err := net.Dial("udp", fmt.Sprintf("127.0.0.1:%d", port))
     if err != nil {
 		fmt.Printf("Some error %v", err)
         return
@@ -46,10 +50,10 @@ func discoveryClient(port int, ip string, nodes map[string]int) {
 	defer conn.Close()
 	for node_ip, _ := range(nodes) {
 		fmt.Fprintf(conn, node_ip)
-	}
-    _, err = bufio.NewReader(conn).Read(p)
-    if err != nil {
-		fmt.Printf("Discovery client error %v\n", err)
+		_, err = bufio.NewReader(conn).Read(p)
+		if err != nil {
+			fmt.Printf("Discovery client error %v\n", err)
+		}
 	}
 }
 
