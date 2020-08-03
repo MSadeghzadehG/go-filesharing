@@ -16,8 +16,14 @@ func main() {
 		discovery.StartService(3000, "127.0.0.1", nodes, 100)
 		defer wg.Done()
 	}()
+	s := file.GetFile{
+		CheckPort:	3001, 
+		GetPort:	3002, 
+		Ip:			"127.0.0.1", 
+		Directory:	"./filesToShare/",
+	}
 	go func ()  {
-		file.StartService(3001, "127.0.0.1", nodes, "./filesToShare/")
+		file.StartService(s, nodes)
 		defer wg.Done()
 	}()
 	wg.Wait()
